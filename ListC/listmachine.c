@@ -406,41 +406,46 @@ void initheap() {
 }
 
 void markPhase(int s[], int sp) {
-  printf("marking ...\n");
+  /*printf("marking ...\n");
   int i;
   for(i = 0; i<sp; i++){
     mark(s[i]);
-  }
+  }*/
 }
 
 void mark(word* block){
-  printf("marking header..");
+  /*printf("marking header..");
   do{
     Paint(word[0], Black);
-  } while(word[2] != 0);
+  } while(word[2] != 0);*/
 }
 
 void sweepPhase() {
   printf("sweeping ...\n");
-  word* heapPtr = heap, freePtr = freelist;
+  word* heapPtr = heap;
+  word* freePtr = freelist;
   while(heapPtr < afterHeap){
     switch(Color(heapPtr[0])){
       case Black:
-           Paint(heap[i], White);
+           heapPtr[0] = Paint(heapPtr[0], White);
       case White:         
            if(freePtr < heap){
-             Paint(heapPtr[0], Blue);
-             freePtr = heap[Length(heapPtr[0])];
+             heapPtr[0] = Paint(heapPtr[0], Blue);
+             int i;
+             for(i=0;i<Length(heapPtr[0]);i++){
+               freePtr[i] = heapPtr[i];
+             }
              freePtr += Length(heapPtr[0]);
 
-             int i;
-             for(i = 0; i < Length(heapPtr[0]); i++)
-                &heapPtr[i] = 0;
+             for(i = 0; i < Length(heapPtr[0]); i++){
+                heapPtr[i] = 0;
+             }
            }else{
              printf("freelist exceeded the length of the heap");
            }
       case Blue:
            //Ignore as they are either already on the freelist or they are orphan blocks
+           printf("Blue block occured..");
     }
       heapPtr += Length(heapPtr[0]) + 1;
   }
