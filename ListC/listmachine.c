@@ -407,12 +407,43 @@ void initheap() {
 
 void markPhase(int s[], int sp) {
   printf("marking ...\n");
-  // TODO: Actually mark something
+  int i;
+  for(i = 0; i<sp; i++){
+    mark(s[i]);
+  }
+}
+
+void mark(word* block){
+  printf("marking header..");
+  do{
+    Paint(word[0], Black);
+  } while(word[2] != 0);
 }
 
 void sweepPhase() {
   printf("sweeping ...\n");
-  // TODO: Actually sweep
+  word* heapPtr = heap, freePtr = freelist;
+  while(heapPtr < afterHeap){
+    switch(Color(heapPtr[0])){
+      case Black:
+           Paint(heap[i], White);
+      case White:         
+           if(freePtr < heap){
+             Paint(heapPtr[0], Blue);
+             freePtr = heap[Length(heapPtr[0])];
+             freePtr += Length(heapPtr[0]);
+
+             int i;
+             for(i = 0; i < Length(heapPtr[0]); i++)
+                &heapPtr[i] = 0;
+           }else{
+             printf("freelist exceeded the length of the heap");
+           }
+      case Blue:
+           //Ignore as they are either already on the freelist or they are orphan blocks
+    }
+      heapPtr += Length(heapPtr[0]) + 1;
+  }
 }
 
 void collect(int s[], int sp) {
