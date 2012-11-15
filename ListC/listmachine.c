@@ -199,7 +199,7 @@ int* readfile(char* filename) {
 }
 
 word* allocate(unsigned int tag, unsigned int length, int s[], int sp);
-
+void mark(word* block);
 // The machine: execute the code starting at p[pc] 
 
 int execcode(int p[], int s[], int iargs[], int iargc, int /* boolean */ trace) {
@@ -405,49 +405,51 @@ void initheap() {
   freelist = &heap[0];
 }
 
+//Mark all headers referenced from the stack
 void markPhase(int s[], int sp) {
-  /*printf("marking ...\n");
+  printf("marking ...\n");
   int i;
   for(i = 0; i<sp; i++){
-    mark(s[i]);
-  }*/
+    if(!IsInt(s[i]) && s[i] != 0){
+      mark((word *)s[i]);
+    }
+  }
 }
 
+//Marks the headers black recursively
 void mark(word* block){
-  /*printf("marking header..");
-  do{
-    Paint(word[0], Black);
-  } while(word[2] != 0);*/
+  //Paint header black if color is white
+  if(Color(block[0])==White){
+    block[0] = Paint(block[0], Black);
+  }
+  
+  //Mark recursively if element in block is a reference
+  if(!IsInt(block[1]) && block[1] != 0 && Color(block[1]) != Black)
+    mark((word *)block[1]);
+  if(!IsInt(block[2]) && block[2] != 0 && Color(block[2]) != Black)
+    mark((word *)block[2]);
 }
 
+/* Cleans up the heap by adding free blocks to the freelist and changing header colors */
 void sweepPhase() {
   printf("sweeping ...\n");
   word* heapPtr = heap;
-  word* freePtr = freelist;
+  //Go through the heap as long as the heap pointer is less than afterheap, which is a pointer to the last element in the heap
   while(heapPtr < afterHeap){
+    int length = Length(heapPtr[0]);
     switch(Color(heapPtr[0])){
-      case Black:
+      case Black: //If the header is black
            heapPtr[0] = Paint(heapPtr[0], White);
-      case White:         
-           if(freePtr < heap){
-             heapPtr[0] = Paint(heapPtr[0], Blue);
-             int i;
-             for(i=0;i<Length(heapPtr[0]);i++){
-               freePtr[i] = heapPtr[i];
-             }
-             freePtr += Length(heapPtr[0]);
-
-             for(i = 0; i < Length(heapPtr[0]); i++){
-                heapPtr[i] = 0;
-             }
-           }else{
-             printf("freelist exceeded the length of the heap");
-           }
-      case Blue:
-           //Ignore as they are either already on the freelist or they are orphan blocks
-           printf("Blue block occured..");
+      case White: //If the header is white
+           //Paint header blue
+           heapPtr[0] = Paint(heapPtr[0], Blue);
+           //Set first element in the free block to point to freelist
+           //and set freelist to point to the header of the free block
+           heapPtr[1] = (word)freelist;
+           freelist = &heapPtr[0];
     }
-      heapPtr += Length(heapPtr[0]) + 1;
+    //Set heap pointer to next block
+    heapPtr += length + 1;
   }
 }
 
