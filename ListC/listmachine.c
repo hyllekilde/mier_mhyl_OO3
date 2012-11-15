@@ -418,16 +418,15 @@ void markPhase(int s[], int sp) {
 
 //Marks the headers black recursively
 void mark(word* block){
-  //Paint header black if color is white
-  if(Color(block[0])==White){
+  //Paint header black if color is white and not 0
+  if(Color(block[0])==White && block[0] != 0){
     block[0] = Paint(block[0], Black);
-  }
-  
-  //Mark recursively if element in block is a reference
+  //Mark recursively if one of the elements in the block is a reference
   if(!IsInt(block[1]) && block[1] != 0 && Color(block[1]) != Black)
     mark((word *)block[1]);
   if(!IsInt(block[2]) && block[2] != 0 && Color(block[2]) != Black)
     mark((word *)block[2]);
+  }
 }
 
 /* Cleans up the heap by adding free blocks to the freelist and changing header colors */
