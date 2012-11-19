@@ -4,52 +4,52 @@
    sestoft@itu.dk * 2009-11-17, 2012-02-08
 
    Compile like this, on ssh.itu.dk say:
-   gcc -Wall listmachine.c -o listmachine
+      gcc -Wall listmachine.c -o listmachine
 
    If necessary, force compiler to use 32 bit integers:
-   gcc -m32 -Wall listmachine.c -o listmachine
+      gcc -m32 -Wall listmachine.c -o listmachine
 
    To execute a program file using this abstract machine, do:
-   ./listmachine <programfile> <arg1> <arg2> ...
+      ./listmachine <programfile> <arg1> <arg2> ...
    To get also a trace of the program execution:
-   ./listmachine -trace <programfile> <arg1> <arg2> ...
+      ./listmachine -trace <programfile> <arg1> <arg2> ...
 
    This code assumes -- and checks -- that values of type
    int, unsigned int and unsigned int* have size 32 bits.
-   */
+*/
 
 /*
    Data representation in the stack s[...] and the heap:
- * All integers are tagged with a 1 bit in the least significant
- position, regardless of whether they represent program integers,
- return addresses, array base addresses or old base pointers
- (into the stack).  
- * All heap references are word-aligned, that is, the two least
- significant bits of a heap reference are 00.  
- * Integer constants and code addresses in the program array
- p[...] are not tagged.
- The distinction between integers and references is necessary for 
- the garbage collector to be precise (not conservative).
+    * All integers are tagged with a 1 bit in the least significant
+      position, regardless of whether they represent program integers,
+      return addresses, array base addresses or old base pointers
+      (into the stack).  
+    * All heap references are word-aligned, that is, the two least
+      significant bits of a heap reference are 00.  
+    * Integer constants and code addresses in the program array
+      p[...] are not tagged.
+   The distinction between integers and references is necessary for 
+   the garbage collector to be precise (not conservative).
 
- The heap consists of 32-bit words, and the heap is divided into 
- blocks.  A block has a one-word header block[0] followed by the 
- block's contents: zero or more words block[i], i=1..n.
+   The heap consists of 32-bit words, and the heap is divided into 
+   blocks.  A block has a one-word header block[0] followed by the 
+   block's contents: zero or more words block[i], i=1..n.
 
- A header has the form ttttttttnnnnnnnnnnnnnnnnnnnnnngg
- where tttttttt is the block tag, all 0 for cons cells
- nn....nn is the block length (excluding header)
- gg       is the block's color
+   A header has the form ttttttttnnnnnnnnnnnnnnnnnnnnnngg
+   where tttttttt is the block tag, all 0 for cons cells
+    nn....nn is the block length (excluding header)
+	 gg       is the block's color
 
- The block color has this meaning:
- gg=00=White: block is dead (after mark, before sweep)
- gg=01=Grey:  block is live, children not marked (during mark)
- gg=11=Black: block is live (after mark, before sweep)
- gg=11=Blue:  block is on the freelist or orphaned
+   The block color has this meaning:
+   gg=00=White: block is dead (after mark, before sweep)
+   gg=01=Grey:  block is live, children not marked (during mark)
+   gg=11=Black: block is live (after mark, before sweep)
+   gg=11=Blue:  block is on the freelist or orphaned
 
- A block of length zero is an orphan; it cannot be used 
- for data and cannot be on the freelist.  An orphan is 
- created when allocating all but the last word of a free block.
- */
+   A block of length zero is an orphan; it cannot be used 
+   for data and cannot be on the freelist.  An orphan is 
+   created when allocating all but the last word of a free block.
+*/
 
 #include <stdlib.h>
 #include <string.h>
@@ -120,44 +120,44 @@ word *freelist;
 #define SETCDR 31
 
 #define STACKSIZE 1000
-
+  
 // Print the stack machine instruction at p[pc]
 
 void printInstruction(int p[], int pc) {
   switch (p[pc]) {
-    case CSTI:   printf("CSTI %d", p[pc+1]); break;
-    case ADD:    printf("ADD"); break;
-    case SUB:    printf("SUB"); break;
-    case MUL:    printf("MUL"); break;
-    case DIV:    printf("DIV"); break;
-    case MOD:    printf("MOD"); break;
-    case EQ:     printf("EQ"); break;
-    case LT:     printf("LT"); break;
-    case NOT:    printf("NOT"); break;
-    case DUP:    printf("DUP"); break;
-    case SWAP:   printf("SWAP"); break;
-    case LDI:    printf("LDI"); break;
-    case STI:    printf("STI"); break;
-    case GETBP:  printf("GETBP"); break;
-    case GETSP:  printf("GETSP"); break;
-    case INCSP:  printf("INCSP %d", p[pc+1]); break;
-    case GOTO:   printf("GOTO %d", p[pc+1]); break;
-    case IFZERO: printf("IFZERO %d", p[pc+1]); break;
-    case IFNZRO: printf("IFNZRO %d", p[pc+1]); break;
-    case CALL:   printf("CALL %d %d", p[pc+1], p[pc+2]); break;
-    case TCALL:  printf("TCALL %d %d %d", p[pc+1], p[pc+2], p[pc+3]); break;
-    case RET:    printf("RET %d", p[pc+1]); break;
-    case PRINTI: printf("PRINTI"); break;
-    case PRINTC: printf("PRINTC"); break;
-    case LDARGS: printf("LDARGS"); break;
-    case STOP:   printf("STOP"); break;
-    case NIL:    printf("NIL"); break;
-    case CONS:   printf("CONS"); break;
-    case CAR:    printf("CAR"); break;
-    case CDR:    printf("CDR"); break;
-    case SETCAR: printf("SETCAR"); break;
-    case SETCDR: printf("SETCDR"); break;
-    default:     printf("<unknown>"); break; 
+  case CSTI:   printf("CSTI %d", p[pc+1]); break;
+  case ADD:    printf("ADD"); break;
+  case SUB:    printf("SUB"); break;
+  case MUL:    printf("MUL"); break;
+  case DIV:    printf("DIV"); break;
+  case MOD:    printf("MOD"); break;
+  case EQ:     printf("EQ"); break;
+  case LT:     printf("LT"); break;
+  case NOT:    printf("NOT"); break;
+  case DUP:    printf("DUP"); break;
+  case SWAP:   printf("SWAP"); break;
+  case LDI:    printf("LDI"); break;
+  case STI:    printf("STI"); break;
+  case GETBP:  printf("GETBP"); break;
+  case GETSP:  printf("GETSP"); break;
+  case INCSP:  printf("INCSP %d", p[pc+1]); break;
+  case GOTO:   printf("GOTO %d", p[pc+1]); break;
+  case IFZERO: printf("IFZERO %d", p[pc+1]); break;
+  case IFNZRO: printf("IFNZRO %d", p[pc+1]); break;
+  case CALL:   printf("CALL %d %d", p[pc+1], p[pc+2]); break;
+  case TCALL:  printf("TCALL %d %d %d", p[pc+1], p[pc+2], p[pc+3]); break;
+  case RET:    printf("RET %d", p[pc+1]); break;
+  case PRINTI: printf("PRINTI"); break;
+  case PRINTC: printf("PRINTC"); break;
+  case LDARGS: printf("LDARGS"); break;
+  case STOP:   printf("STOP"); break;
+  case NIL:    printf("NIL"); break;
+  case CONS:   printf("CONS"); break;
+  case CAR:    printf("CAR"); break;
+  case CDR:    printf("CDR"); break;
+  case SETCAR: printf("SETCAR"); break;
+  case SETCDR: printf("SETCDR"); break;
+  default:     printf("<unknown>"); break; 
   }
 }
 
@@ -210,118 +210,118 @@ int execcode(int p[], int s[], int iargs[], int iargc, int /* boolean */ trace) 
     if (trace) 
       printStackAndPc(s, bp, sp, p, pc);
     switch (p[pc++]) {
-      case CSTI:
-        s[sp+1] = Tag(p[pc++]); sp++; break;
-      case ADD: 
-        s[sp-1] = Tag(Untag(s[sp-1]) + Untag(s[sp])); sp--; break;
-      case SUB: 
-        s[sp-1] = Tag(Untag(s[sp-1]) - Untag(s[sp])); sp--; break;
-      case MUL: 
-        s[sp-1] = Tag(Untag(s[sp-1]) * Untag(s[sp])); sp--; break;
-      case DIV: 
-        s[sp-1] = Tag(Untag(s[sp-1]) / Untag(s[sp])); sp--; break;
-      case MOD: 
-        s[sp-1] = Tag(Untag(s[sp-1]) % Untag(s[sp])); sp--; break;
-      case EQ: 
-        s[sp-1] = Tag(s[sp-1] == s[sp] ? 1 : 0); sp--; break;
-      case LT: 
-        s[sp-1] = Tag(s[sp-1] < s[sp] ? 1 : 0); sp--; break;
-      case NOT: {
-                  int v = s[sp];
-                  s[sp] = Tag((IsInt(v) ? Untag(v) == 0 : v == 0) ? 1 : 0);
-                } break;
-      case DUP: 
-                s[sp+1] = s[sp]; sp++; break;
-      case SWAP: 
-                { int tmp = s[sp];  s[sp] = s[sp-1];  s[sp-1] = tmp; } break; 
-      case LDI:                 // load indirect
-                s[sp] = s[Untag(s[sp])]; break;
-      case STI:                 // store indirect, keep value on top
-                s[Untag(s[sp-1])] = s[sp]; s[sp-1] = s[sp]; sp--; break;
-      case GETBP:
-                s[sp+1] = Tag(bp); sp++; break;
-      case GETSP:
-                s[sp+1] = Tag(sp); sp++; break;
-      case INCSP:
-                sp = sp+p[pc++]; break;
-      case GOTO:
-                pc = p[pc]; break;
-      case IFZERO: { 
-                     int v = s[sp--];
-                     pc = (IsInt(v) ? Untag(v) == 0 : v == 0) ? p[pc] : pc+1; 
-                   } break;
-      case IFNZRO: { 
-                     int v = s[sp--];
-                     pc = (IsInt(v) ? Untag(v) != 0 : v != 0) ? p[pc] : pc+1; 
-                   } break;
-      case CALL: { 
-                   int argc = p[pc++];
-                   int i;
-                   for (i=0; i<argc; i++)               // Make room for return address
-                     s[sp-i+2] = s[sp-i];               // and old base pointer
-                   s[sp-argc+1] = Tag(pc+1); sp++; 
-                   s[sp-argc+1] = Tag(bp);   sp++; 
-                   bp = sp+1-argc;
-                   pc = p[pc]; 
-                 } break; 
-      case TCALL: { 
-                    int argc = p[pc++];                  // Number of new arguments
-                    int pop  = p[pc++];                  // Number of variables to discard
-                    int i;
-                    for (i=argc-1; i>=0; i--)    // Discard variables
-                      s[sp-i-pop] = s[sp-i];
-                    sp = sp - pop; pc = p[pc]; 
-                  } break; 
-      case RET: { 
-                  int res = s[sp]; 
-                  sp = sp-p[pc]; bp = Untag(s[--sp]); pc = Untag(s[--sp]); 
-                  s[sp] = res; 
-                } break; 
-      case PRINTI:
-                printf("%d ", IsInt(s[sp]) ? Untag(s[sp]) : s[sp]); break; 
-      case PRINTC:
-                printf("%c", Untag(s[sp])); break; 
-      case LDARGS: {
-                     int i;
-                     for (i=0; i<iargc; i++) // Push commandline arguments
-                       s[++sp] = Tag(iargs[i]);
-                   } break;
-      case STOP:
-                   return 0;
-      case NIL:    
-                   s[sp+1] = 0; sp++; break;
-      case CONS: {
-                   word* p = allocate(CONSTAG, 2, s, sp); 
-                   p[1] = (word)s[sp-1];
-                   p[2] = (word)s[sp];
-                   s[sp-1] = (int)p;
-                   sp--;
-                 } break;
-      case CAR: {
-                  word* p = (word*)s[sp]; 
-                  if (p == 0) 
-                  { printf("Cannot take car of null\n"); return -1; }
-                  s[sp] = (int)(p[1]);
-                } break;
-      case CDR: {
-                  word* p = (word*)s[sp]; 
-                  if (p == 0) 
-                  { printf("Cannot take cdr of null\n"); return -1; }
-                  s[sp] = (int)(p[2]);
-                } break;
-      case SETCAR: {
-                     word v = (word)s[sp--];
-                     word* p = (word*)s[sp]; 
-                     p[1] = v;
-                   } break;
-      case SETCDR: {
-                     word v = (word)s[sp--];
-                     word* p = (word*)s[sp]; 
-                     p[2] = v;
-                   } break;
-      default:                  
-                   printf("Illegal instruction %d at address %d\n", p[pc-1], pc-1);
-                   return -1;
+    case CSTI:
+      s[sp+1] = Tag(p[pc++]); sp++; break;
+    case ADD: 
+      s[sp-1] = Tag(Untag(s[sp-1]) + Untag(s[sp])); sp--; break;
+    case SUB: 
+      s[sp-1] = Tag(Untag(s[sp-1]) - Untag(s[sp])); sp--; break;
+    case MUL: 
+      s[sp-1] = Tag(Untag(s[sp-1]) * Untag(s[sp])); sp--; break;
+    case DIV: 
+      s[sp-1] = Tag(Untag(s[sp-1]) / Untag(s[sp])); sp--; break;
+    case MOD: 
+      s[sp-1] = Tag(Untag(s[sp-1]) % Untag(s[sp])); sp--; break;
+    case EQ: 
+      s[sp-1] = Tag(s[sp-1] == s[sp] ? 1 : 0); sp--; break;
+    case LT: 
+      s[sp-1] = Tag(s[sp-1] < s[sp] ? 1 : 0); sp--; break;
+    case NOT: {
+      int v = s[sp];
+      s[sp] = Tag((IsInt(v) ? Untag(v) == 0 : v == 0) ? 1 : 0);
+    } break;
+    case DUP: 
+      s[sp+1] = s[sp]; sp++; break;
+    case SWAP: 
+      { int tmp = s[sp];  s[sp] = s[sp-1];  s[sp-1] = tmp; } break; 
+    case LDI:                 // load indirect
+      s[sp] = s[Untag(s[sp])]; break;
+    case STI:                 // store indirect, keep value on top
+      s[Untag(s[sp-1])] = s[sp]; s[sp-1] = s[sp]; sp--; break;
+    case GETBP:
+      s[sp+1] = Tag(bp); sp++; break;
+    case GETSP:
+      s[sp+1] = Tag(sp); sp++; break;
+    case INCSP:
+      sp = sp+p[pc++]; break;
+    case GOTO:
+      pc = p[pc]; break;
+    case IFZERO: { 
+      int v = s[sp--];
+      pc = (IsInt(v) ? Untag(v) == 0 : v == 0) ? p[pc] : pc+1; 
+    } break;
+    case IFNZRO: { 
+      int v = s[sp--];
+      pc = (IsInt(v) ? Untag(v) != 0 : v != 0) ? p[pc] : pc+1; 
+    } break;
+    case CALL: { 
+      int argc = p[pc++];
+      int i;
+      for (i=0; i<argc; i++)               // Make room for return address
+        s[sp-i+2] = s[sp-i];               // and old base pointer
+      s[sp-argc+1] = Tag(pc+1); sp++; 
+      s[sp-argc+1] = Tag(bp);   sp++; 
+      bp = sp+1-argc;
+      pc = p[pc]; 
+    } break; 
+    case TCALL: { 
+      int argc = p[pc++];                  // Number of new arguments
+      int pop  = p[pc++];                  // Number of variables to discard
+      int i;
+      for (i=argc-1; i>=0; i--)    // Discard variables
+        s[sp-i-pop] = s[sp-i];
+      sp = sp - pop; pc = p[pc]; 
+    } break; 
+    case RET: { 
+      int res = s[sp]; 
+      sp = sp-p[pc]; bp = Untag(s[--sp]); pc = Untag(s[--sp]); 
+      s[sp] = res; 
+    } break; 
+    case PRINTI:
+      printf("%d ", IsInt(s[sp]) ? Untag(s[sp]) : s[sp]); break; 
+    case PRINTC:
+      printf("%c", Untag(s[sp])); break; 
+    case LDARGS: {
+      int i;
+      for (i=0; i<iargc; i++) // Push commandline arguments
+        s[++sp] = Tag(iargs[i]);
+    } break;
+    case STOP:
+      return 0;
+    case NIL:    
+      s[sp+1] = 0; sp++; break;
+    case CONS: {
+      word* p = allocate(CONSTAG, 2, s, sp); 
+      p[1] = (word)s[sp-1];
+      p[2] = (word)s[sp];
+      s[sp-1] = (int)p;
+      sp--;
+    } break;
+    case CAR: {
+      word* p = (word*)s[sp]; 
+      if (p == 0) 
+        { printf("Cannot take car of null\n"); return -1; }
+      s[sp] = (int)(p[1]);
+    } break;
+    case CDR: {
+      word* p = (word*)s[sp]; 
+      if (p == 0) 
+        { printf("Cannot take cdr of null\n"); return -1; }
+      s[sp] = (int)(p[2]);
+    } break;
+    case SETCAR: {
+      word v = (word)s[sp--];
+      word* p = (word*)s[sp]; 
+      p[1] = v;
+    } break;
+    case SETCDR: {
+      word v = (word)s[sp--];
+      word* p = (word*)s[sp]; 
+      p[2] = v;
+    } break;
+    default:                  
+      printf("Illegal instruction %d at address %d\n", p[pc-1], pc-1);
+      return -1;
     }
   }
 }
@@ -361,7 +361,7 @@ int inHeap(word* p) {
 
 void heapStatistics() {
   int blocks = 0, free = 0, orphans = 0, 
-      blocksSize = 0, freeSize = 0, largestFree = 0;
+    blocksSize = 0, freeSize = 0, largestFree = 0;
   word* heapPtr = heap;
   while (heapPtr < afterHeap) {
     if (Length(heapPtr[0]) > 0) {
@@ -372,7 +372,7 @@ void heapStatistics() {
     word* nextBlock = heapPtr + Length(heapPtr[0]) + 1;
     if (nextBlock > afterHeap) {
       printf("HEAP ERROR: block at heap[%d] extends beyond heap\n", 
-          heapPtr-heap);
+	     heapPtr-heap);
       exit(-1);
     }
     heapPtr = nextBlock;
@@ -383,7 +383,7 @@ void heapStatistics() {
     int length = Length(freePtr[0]);
     if (freePtr < heap || afterHeap < freePtr+length+1) {
       printf("HEAP ERROR: freelist item %d (at heap[%d], length %d) is outside heap\n", 
-          free, freePtr-heap, length);
+	     free, freePtr-heap, length);
       exit(-1);
     }
     freeSize += length;
@@ -393,7 +393,7 @@ void heapStatistics() {
     freePtr = (word*)freePtr[1];
   }
   printf("Heap: %d blocks (%d words); of which %d free (%d words, largest %d words); %d orphans\n", 
-      blocks, blocksSize, free, freeSize, largestFree, orphans);
+	 blocks, blocksSize, free, freeSize, largestFree, orphans);
 }
 
 void initheap() {
@@ -421,12 +421,11 @@ void mark(word* block){
   //Paint header black if color is white and not 0
   if(Color(block[0])==White && block[0] != 0){
     block[0] = Paint(block[0], Black);
-    //Mark recursively if one of the elements in the block is a reference
-    int i;
-    for(i=1; i<=Length(block[0]); i++){
-    if(!IsInt(block[i]) && block[i] != 0 && Color(block[i]) != Black)
-      mark((word *)block[i]);
-    }
+  //Mark recursively if one of the elements in the block is a reference
+  if(!IsInt(block[1]) && block[1] != 0 && Color(block[1]) != Black)
+    mark((word *)block[1]);
+  if(!IsInt(block[2]) && block[2] != 0 && Color(block[2]) != Black)
+    mark((word *)block[2]);
   }
 }
 
@@ -439,14 +438,14 @@ void sweepPhase() {
     int length = Length(heapPtr[0]);
     switch(Color(heapPtr[0])){
       case Black: //If the header is black
-        heapPtr[0] = Paint(heapPtr[0], White);
+           heapPtr[0] = Paint(heapPtr[0], White);
       case White: //If the header is white
-        //Paint header blue
-        heapPtr[0] = Paint(heapPtr[0], Blue);
-        //Set first element in the free block to point to freelist
-        //and set freelist to point to the header of the free block
-        heapPtr[1] = (word)freelist;
-        freelist = &heapPtr[0];
+           //Paint header blue
+           heapPtr[0] = Paint(heapPtr[0], Blue);
+           //Set first element in the free block to point to freelist
+           //and set freelist to point to the header of the free block
+           heapPtr[1] = (word)freelist;
+           freelist = &heapPtr[0];
     }
     //Set heap pointer to next block
     heapPtr += length + 1;
