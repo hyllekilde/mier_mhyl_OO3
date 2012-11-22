@@ -440,6 +440,7 @@ void sweepPhase() {
     switch(Color(heapPtr[0])){
       case Black: //If the header is black
         heapPtr[0] = Paint(heapPtr[0], White);
+        break;
       case White: //If the header is white
         if(Color(heap[Length(heap[0])+1]) == White){
           heapPtr[0] = mkheader(CONSTAG, 5, Blue);
@@ -451,6 +452,7 @@ void sweepPhase() {
         //and set freelist to point to the header of the free block
         heapPtr[1] = (word)freelist;
         freelist = &heapPtr[0];
+        break;
     }
     //Set heap pointer to next block
     if(Length(heapPtr[0])!=length){

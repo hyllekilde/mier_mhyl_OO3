@@ -80,8 +80,10 @@ typedef unsigned int word; //A block, to be used for storing data (both header a
 #define HEAPSIZE 1000 // Heap size in words
 
 word* heap; //Where does the heap start?
+word* heapTo; //Where does the copy heap start?
 word* afterHeap; //Where does the heap end?
-word *freelist; //What is free?
+word* afterHeapTo; //Where does the copy heap end?
+word* freelist; //What is free?
 
 // These numeric instruction codes must agree with ListC/Machine.fs:
 // (Use #define because const int does not define a constant in C)
@@ -400,139 +402,31 @@ void initheap() {
   freelist = &heap[0];
 }
 
-//Mark all headers referenced from the stack
-void markPhase(int s[], int sp) {
-  printf("marking ...\n");
-  int i;
-  for(i = 0; i<sp; i++){
-    if(!IsInt(s[i]) && s[i] != 0){
-      mark((word *)s[i]);
-    }
-  }
-}
-
-//Marks the headers black recursively
-void mark(word* block){
-  //Paint header black if color is white and not 0
-  if(Color(block[0])==White && block[0] != 0){
-    block[0] = Paint(block[0], Black);
-    //Mark recursively if one of the elements in the block is a reference
-    int i;
-    for(i=1; i<=Length(block[0]); i++){
-      if(!IsInt(block[i]) && block[i] != 0 && Color(block[i]) != Black)
-        mark((word *)block[i]);
-    }
-  }
-}
-
-//Cleans up the heap by adding free blocks to the freelist and changing header colors
-void sweepPhase() {
-  printf("sweeping ...\n");
-  word* heapPtr = heap;
-  //Go through the heap as long as the heap pointer is less than afterheap, which is a pointer to the last element in the heap
-  while(heapPtr < afterHeap){
-    int length = Length(heapPtr[0]);
-    switch(Color(heapPtr[0])){
-      case Black: //If the header is black
-        heapPtr[0] = Paint(heapPtr[0], White);
-      case White: //If the header is white
-        /* Exercise 2
-        heapPtr[0] = Paint(heapPtr[0],Blue);
-        
-        //Set first element in the free block to point to freelist
-        //and set freelist to point to the header of the free block
-        heapPtr[1] = (word)freelist;
-        freelist = &heapPtr[0];
-        */
-
-        /* Exercise 3
-        if(Color(heap[Length(heap[0])+1]) == White){
-        heapPtr[0] = mkheader(NIL, (length-1)+Length(heapPtr[length]), Blue);
-        }else{
-        //Paint header blue
-        heapPtr[0] = Paint(heapPtr[0], Blue);
-        }
-        //Set first element in the free block to point to freelist
-        //and set freelist to point to the header of the free block
-        heapPtr[1] = (word)freelist;
-        freelist = &heapPtr[0];
-        }
-        //Set heap pointer to next block
-        if(Length(heapPtr[0])!=length){
-        heapPtr += Length(heapPtr[0]) + 1;
-        }else{
-        heapPtr += length + 1;
-        }
-        */
-        int len=0;
-        while(Color(heapPtr[len])==White){
-          len+=Length(heapPtr[len]);
-        }
-
-        if(len>length){
-          heapPtr[0] = mkheader(NIL, len-1, Blue);
-        }else{
-          heapPtr[len] = Paint(heapPtr[len],Blue);
-        }
-        //Set first element in the free block to point to freelist
-        //and set freelist to point to the header of the free block
-        heapPtr[1] = (word)freelist;
-        freelist = &heapPtr[0];
-  }
-  /* Exercise 2 & 3
-  //Set heap pointer to next block
-  if(Length(heapPtr[0])!=length){
-    heapPtr += Length(heapPtr[0]) + 1;
-  }else{
-    heapPtr += length + 1;
-  }
-  */
-
-  if(len>length){
-    heapPtr += len;
-  }else{
-    heapPtr += length+1;
-  }
-}
+void copyFromTo(int s[], int sp){
+  //TODO
+  printf("Collecting garbage\n");
 }
 
 //Do garbage collection
 void collect(int s[], int sp) {
-  markPhase(s, sp);
-  heapStatistics();
-  sweepPhase();
-  heapStatistics();
+  copyFromTo(s, sp);
+  //heapStatistics();
 }
 
 //Allocate new word with this tag of this length on this stack with this stackpointer
 word* allocate(unsigned int tag, unsigned int length, int s[], int sp) {
   int attempt = 1;
   do {
-    word* free = freelist;
-    word** prev = &freelist;
-    while (free != 0) {
-      int rest = Length(free[0]) - length;
-      if (rest >= 0)  {
-        if (rest == 0) // Exact fit with free block
-          *prev = (word*)free[1];
-        else if (rest == 1) { // Create orphan (unusable) block
-          *prev = (word*)free[1];
-          free[length+1] = mkheader(0, rest-1, Blue);
-        } else { // Make previous free block point to rest of this block
-          *prev = &free[length+1];
-          free[length+1] = mkheader(0, rest-1, Blue);
-          free[length+2] = free[1];
-        }
-        free[0] = mkheader(tag, length, White);
-        return free;
-      }
-      prev = (word**)&free[1];
-      free = (word*)free[1];
+    word* newBlock = freelist;
+    freelist += length + 1;
+    if (freelist <= afterHeap) {
+      newBlock[0] = mkheader(tag, length, White);
+      return newBlock;
     }
     // No free space, do a garbage collection and try again
-    if (attempt==1)
-      collect(s, sp);
+    if (attempt==1) collect(s, sp);
   } while (attempt++ == 1);
+    
   printf("Out of memory\n");
   exit(1);
 }
