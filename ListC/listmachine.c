@@ -424,8 +424,8 @@ void mark(word* block){
     //Mark recursively if one of the elements in the block is a reference
     int i;
     for(i=1; i<=Length(block[0]); i++){
-    if(!IsInt(block[i]) && block[i] != 0 && Color(block[i]) != Black)
-      mark((word *)block[i]);
+      if(!IsInt(block[i]) && block[i] != 0 && Color(block[i]) != Black)
+        mark((word *)block[i]);
     }
   }
 }
@@ -441,25 +441,64 @@ void sweepPhase() {
       case Black: //If the header is black
         heapPtr[0] = Paint(heapPtr[0], White);
       case White: //If the header is white
+        /* Exercise 2
+        heapPtr[0] = Paint(heapPtr[0],Blue);
+        
+        //Set first element in the free block to point to freelist
+        //and set freelist to point to the header of the free block
+        heapPtr[1] = (word)freelist;
+        freelist = &heapPtr[0];
+        */
+
+        /* Exercise 3
         if(Color(heap[Length(heap[0])+1]) == White){
-          heapPtr[0] = mkheader(CONSTAG, 5, Blue);
+        heapPtr[0] = mkheader(NIL, (length-1)+Length(heapPtr[length]), Blue);
         }else{
-          //Paint header blue
-          heapPtr[0] = Paint(heapPtr[0], Blue);
+        //Paint header blue
+        heapPtr[0] = Paint(heapPtr[0], Blue);
         }
         //Set first element in the free block to point to freelist
         //and set freelist to point to the header of the free block
         heapPtr[1] = (word)freelist;
         freelist = &heapPtr[0];
-    }
-    //Set heap pointer to next block
-    if(Length(heapPtr[0])!=length){
-      printf("HAPPEND\n");
-      heapPtr += Length(heapPtr[0]) + 1;
-    }else{
-      heapPtr += length + 1;
-    }
+        }
+        //Set heap pointer to next block
+        if(Length(heapPtr[0])!=length){
+        heapPtr += Length(heapPtr[0]) + 1;
+        }else{
+        heapPtr += length + 1;
+        }
+        */
+        int len=0;
+        while(Color(heapPtr[len])==White){
+          len+=Length(heapPtr[len]);
+        }
+
+        if(len>length){
+          heapPtr[0] = mkheader(NIL, len-1, Blue);
+        }else{
+          heapPtr[len] = Paint(heapPtr[len],Blue);
+        }
+        //Set first element in the free block to point to freelist
+        //and set freelist to point to the header of the free block
+        heapPtr[1] = (word)freelist;
+        freelist = &heapPtr[0];
   }
+  /* Exercise 2 & 3
+  //Set heap pointer to next block
+  if(Length(heapPtr[0])!=length){
+    heapPtr += Length(heapPtr[0]) + 1;
+  }else{
+    heapPtr += length + 1;
+  }
+  */
+
+  if(len>length){
+    heapPtr += len;
+  }else{
+    heapPtr += length+1;
+  }
+}
 }
 
 void collect(int s[], int sp) {
