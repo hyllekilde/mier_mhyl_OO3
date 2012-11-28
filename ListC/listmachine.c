@@ -63,6 +63,7 @@ typedef unsigned int word; //A block, to be used for storing data (both header a
 #define IsInt(v) (((v)&1)==1) //Check if first bit is an 1 -> Then we have an integer
 #define Tag(v) (((v)<<1)|1) //Shift all bits one left and set first bit to 1 (tag as integer)
 #define Untag(v) ((v)>>1) //Shift all bits one right; remove tha tag (untag as integer)
+#define IsReference(v) v!=0 && !IsInt(v) //If it's not Nil and not an Integer, it must be a refernce in list-c
 
 //Color definitions
 #define White 0 //Block is dead (after mark, before sweep)
@@ -77,7 +78,7 @@ typedef unsigned int word; //A block, to be used for storing data (both header a
 
 #define CONSTAG 0
 
-#define HEAPSIZE 20 // Heap size in words
+#define HEAPSIZE 200 // Heap size in words
 
 word* heap; //Where does the heap start?
 word* heapTo; //Where does the copy heap start?
@@ -169,9 +170,22 @@ void printStackAndPc(int s[], int bp, int sp, int p[], int pc) {
     if (IsInt(s[i]))
       printf("%d ", Untag(s[i]));
     else
+      printf("#%d ", s[i]);
+  printf("]");
+  printf("{%d:", pc); printInstruction(p, pc); printf("}\n");
+}
+
+
+// Print current stack (marking heap references by #)
+void printStack(int s[], int sp) {
+  printf("[ ");
+  int i;
+  for (i=0; i<=sp; i++)
+    if (IsInt(s[i]))
+      printf("%d ", Untag(s[i]));
+    else
       printf("#%d ", s[i]);      
   printf("]");
-  printf("{%d:", pc); printInstruction(p, pc); printf("}\n"); 
 }
 
 // Read instructions from a file, return array of instructions
@@ -363,14 +377,14 @@ void printHeap(word* heap) {
   for (i = 0; i < HEAPSIZE; i += 1 + Length(block[0]))
   {
     block = (word*) &heap[i];
-    printf("%4d: Cons #%d (length: %d) \n", i, (int) &block[0], Length(block[0]));
+    printf("%2d: Cons #%d (length: %d) \n", i, (int) &block[0], Length(block[0]));
     for (j = 1; j <= Length(block[0]); ++j){
-      if (block[j] != 0 && !IsInt(block[j])) { //If not Int or Nil, block must be reference
-        printf("%4d. Reference: %d\n", i + j, block[j]);
-      }else if (block[j] == 0) {
-        printf("%4d. Nil\n", i + j);
-      } else {
-        printf("%4d. Int: %d\n", i + j, Untag(block[j]));
+      if (IsReference(block[j])){
+        printf("%2d. Reference: %d\n", i + j, block[j]);
+      }else if (block[j] == 0){
+        printf("%2d. Nil\n", i + j);
+      }else{
+        printf("%2d. Int: %d\n", i + j, Untag(block[j]));
       }
     }
     printf("\n"); //Print a new line after every block, to make overview better
@@ -403,16 +417,47 @@ void initheap() {
   freelist = &heap[0];
 }
 
+//Move a reference from heap to heapTo, and return the new reference
+word* copy(word* block) {
+  //Allocate a block in the to-space
+  //TODO: word* newBlock = allocate((int)BlockTag(block[0]),(int) Length(block[0],)
+
+  //TODO: Copy-step -> See PLC...
+
+}
+
+//Collect grabage with a two-space stop-and-copy approach
 void copyFromTo(int s[], int sp){
-  //TODO
-  printf("Collecting garbage\n");
+  printf("##BEFORE GARBAGE COLLECTION:##\n");
+  printf("Stack:");
+  printStack(s, sp);
+  printf("\n\n");
+  printHeapStats();  
+
+  //Point freelist to begining of to-space
+  freelist = &heapTo[0];
+
+  //For all references in stack, copy necessary heap-data
+  int i;
+  for(i=0; i<=sp; i++)
+    if(IsReference(s[i]))
+      s[i] = (word) moveAndUpdate((word*) s[i]);
+
+  printf("##AFTER GARBAGE COLLECTION (before swap):##\n"); 
   printHeapStats();
+
+  //Swap the two heaps
+  word* tmp = heap;
+  heap = heapTo;
+  heapTo = tmp;
+  tmp = afterHeap;
+  afterHeap = afterHeapTo;
+  afterHeapTo = tmp;
 }
 
 //Do garbage collection
 void collect(int s[], int sp) {
   copyFromTo(s, sp);
-  //heapStatistics();
 }
 
 //Allocate new word with this tag of this length on this stack with this stackpointer
