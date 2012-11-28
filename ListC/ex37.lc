@@ -1,0 +1,42 @@
+// ex36.lc -- a listC source program 
+// We create a cyclic structure creating a cons cell v and making its
+// cdr point back to v itself.  
+// We provoke a garbage collection because a faulty collector may go
+// into an infinite loop either when marking or sweeping or copying 
+// the cyclic structure.
+
+// Should print: 1 1
+
+void main() {
+  dynamic a;
+  int b;
+  dynamic c;
+  int d;
+  int e;
+  int f;
+  int g;
+  dynamic h;
+  a = cons(10, 11);
+  b = 1;
+  c = cons(b,a);
+  d = 2;
+  e = 3;
+  f = 4;
+  g = 5;
+  
+  int i;
+  i = 0;
+  while(i<5){
+    dynamic xs;
+    xs = cons(22,33);  
+    i = i + 1;
+  }
+  
+  h = cons(g,c);
+  
+  while(i<100){
+    dynamic xs;
+    xs = cons(44,55);
+    i = i + 1;
+  }
+}
