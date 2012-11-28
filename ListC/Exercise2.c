@@ -57,35 +57,34 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-typedef unsigned int word;
+typedef unsigned int word; //A block, to be used for storing data (both header and concrete data)
 
-#define IsInt(v) (((v)&1)==1)
-#define Tag(v) (((v)<<1)|1)
-#define Untag(v) ((v)>>1)
+//Integer tagging helper methods
+#define IsInt(v) (((v)&1)==1) //Check if first bit is an 1 -> Then we have an integer
+#define Tag(v) (((v)<<1)|1) //Shift all bits one left and set first bit to 1 (tag as integer)
+#define Untag(v) ((v)>>1) //Shift all bits one right; remove tha tag (untag as integer)
 
-#define White 0
-#define Grey  1
-#define Black 2
-#define Blue  3
+//Color definitions
+#define White 0 //Block is dead (after mark, before sweep)
+#define Grey  1 //Block is live, children not marked (during mark)
+#define Black 2 //Block is live (aftermark, before sweep)
+#define Blue  3 //Block is on the freelist or orphaned
 
-#define BlockTag(hdr) ((hdr)>>24)
-#define Length(hdr)   (((hdr)>>2)&0x003FFFFF)
-#define Color(hdr)    ((hdr)&3)
-#define Paint(hdr, color)  (((hdr)&(~3))|(color))
+#define BlockTag(hdr) ((hdr)>>24) //Shift 24 bits right -> To the first block tag of the element of the header
+#define Length(hdr)   (((hdr)>>2)&0x003FFFFF) //Shift 2 bits right to read the length of the element of the header
+#define Color(hdr)    ((hdr)&3) //Read the color of the header of the element
+#define Paint(hdr, color)  (((hdr)&(~3))|(color)) //Paint a color to the header of the element
 
 #define CONSTAG 0
 
-// Heap size in words
+#define HEAPSIZE 1000 // Heap size in words
 
-#define HEAPSIZE 1000
-
-word* heap;
-word* afterHeap;
-word *freelist;
+word* heap; //Where does the heap start?
+word* afterHeap; //Where does the heap end?
+word *freelist; //What is free?
 
 // These numeric instruction codes must agree with ListC/Machine.fs:
 // (Use #define because const int does not define a constant in C)
-
 #define CSTI 0
 #define ADD 1
 #define SUB 2
@@ -122,7 +121,6 @@ word *freelist;
 #define STACKSIZE 1000
 
 // Print the stack machine instruction at p[pc]
-
 void printInstruction(int p[], int pc) {
   switch (p[pc]) {
     case CSTI:   printf("CSTI %d", p[pc+1]); break;
@@ -162,7 +160,6 @@ void printInstruction(int p[], int pc) {
 }
 
 // Print current stack (marking heap references by #) and current instruction
-
 void printStackAndPc(int s[], int bp, int sp, int p[], int pc) {
   printf("[ ");
   int i;
@@ -176,7 +173,6 @@ void printStackAndPc(int s[], int bp, int sp, int p[], int pc) {
 }
 
 // Read instructions from a file, return array of instructions
-
 int* readfile(char* filename) {
   int capacity = 1, size = 0;
   int *program = (int*)malloc(sizeof(int)*capacity); 
@@ -348,17 +344,16 @@ int execute(int argc, char** argv, int /* boolean */ trace) {
 }
 
 // Garbage collection and heap allocation 
-
 word mkheader(unsigned int tag, unsigned int length, unsigned int color) { 
   return (tag << 24) | (length << 2) | color;
 }
 
+// Is this word in the heap?
 int inHeap(word* p) {
   return heap <= p && p < afterHeap;
 }
 
 // Call this after a GC to get heap statistics:
-
 void heapStatistics() {
   int blocks = 0, free = 0, orphans = 0, 
       blocksSize = 0, freeSize = 0, largestFree = 0;
@@ -409,6 +404,7 @@ void initheap() {
 void markPhase(int s[], int sp) {
   printf("marking ...\n");
   int i;
+  //Mark all references in stack grey
   for(i = 0; i<sp; i++){
     if(!IsInt(s[i]) && s[i] != 0){
       mark((word *)s[i]);
