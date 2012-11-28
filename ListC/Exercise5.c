@@ -451,20 +451,20 @@ void sweepPhase() {
   //Go through the heap as long as the heap pointer is less than afterheap, which is a pointer to the last element in the heap
   while(heapPtr < afterHeap){
     int length = Length(heapPtr[0]);
-    int len=0;
+    int len;
     switch(Color(heapPtr[0])){
       case Black: //If the header is black
         heapPtr[0] = Paint(heapPtr[0], White);
         break;
       case White: //If the header is white
         len = 0;
-        while((heapPtr+len) < afterHeap && Color(heapPtr[len])==White){ //Len er eksklusiv header!!!
-          //printf("Going to white length: %d\n",len);
-          len+=Length(heapPtr[len]) + 1;
+        //Sums up the length of the adjacent free blocks
+        while((heapPtr+len) < afterHeap && Color(heapPtr[len])==White){
+          len+=Length(heapPtr[len]) + 1; //Adds the length of the current block
         }
-
+        //Make new header if any adjacent free blocks or else paint the existing header blue
         if(len>length){
-          heapPtr[0] = mkheader(0, len-1, Blue); //Skal det vare minus 1?
+          heapPtr[0] = mkheader(0, len-1, Blue);
         }else{
           heapPtr[0] = Paint(heapPtr[0],Blue);
         }
@@ -474,10 +474,9 @@ void sweepPhase() {
         freelist = &heapPtr[0];
         break;
     }
-
+    //Set heap pointer to next block 
     if(len>length){
       heapPtr += len;
-      //printf("HeapPtr: %d\n",heapPtr);
     }else{
       heapPtr += length+1;
     }
