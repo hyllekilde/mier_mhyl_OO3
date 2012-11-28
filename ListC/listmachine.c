@@ -77,7 +77,7 @@ typedef unsigned int word; //A block, to be used for storing data (both header a
 
 #define CONSTAG 0
 
-#define HEAPSIZE 1000 // Heap size in words
+#define HEAPSIZE 20 // Heap size in words
 
 word* heap; //Where does the heap start?
 word* heapTo; //Where does the copy heap start?
@@ -355,56 +355,58 @@ int inHeap(word* p) {
   return heap <= p && p < afterHeap;
 }
 
-// Call this after a GC to get heap statistics:
-void heapStatistics() {
-  int blocks = 0, free = 0, orphans = 0, 
-      blocksSize = 0, freeSize = 0, largestFree = 0;
-  word* heapPtr = heap;
-  while (heapPtr < afterHeap) {
-    if (Length(heapPtr[0]) > 0) {
-      blocks++;
-      blocksSize += Length(heapPtr[0]);
-    } else 
-      orphans++;
-    word* nextBlock = heapPtr + Length(heapPtr[0]) + 1;
-    if (nextBlock > afterHeap) {
-      printf("HEAP ERROR: block at heap[%d] extends beyond heap\n", 
-          heapPtr-heap);
-      exit(-1);
+void printHeap(word* heap) {
+  word* block;
+  int i;
+  int j;
+  printf("Heapsize: %d\n\n",HEAPSIZE);
+  for (i = 0; i < HEAPSIZE; i += 1 + Length(block[0]))
+  {
+    block = (word*) &heap[i];
+    printf("%4d: Cons #%d (length: %d) \n", i, (int) &block[0], Length(block[0]));
+    for (j = 1; j <= Length(block[0]); ++j){
+      if (block[j] != 0 && !IsInt(block[j])) { //If not Int or Nil, block must be reference
+        printf("%4d. Reference: %d\n", i + j, block[j]);
+      }else if (block[j] == 0) {
+        printf("%4d. Nil\n", i + j);
+      } else {
+        printf("%4d. Int: %d\n", i + j, Untag(block[j]));
+      }
     }
-    heapPtr = nextBlock;
-  }
-  word* freePtr = freelist;
-  while (freePtr != 0) {
-    free++; 
-    int length = Length(freePtr[0]);
-    if (freePtr < heap || afterHeap < freePtr+length+1) {
-      printf("HEAP ERROR: freelist item %d (at heap[%d], length %d) is outside heap\n", 
-          free, freePtr-heap, length);
-      exit(-1);
-    }
-    freeSize += length;
-    largestFree = length > largestFree ? length : largestFree;
-    if (Color(freePtr[0])!=Blue)
-      printf("Non-blue block at heap[%d] on freelist\n", (int)freePtr);
-    freePtr = (word*)freePtr[1];
-  }
-  printf("Heap: %d blocks (%d words); of which %d free (%d words, largest %d words); %d orphans\n", 
-      blocks, blocksSize, free, freeSize, largestFree, orphans);
+    printf("\n"); //Print a new line after every block, to make overview better
+  } 
+} 
+
+//Print the heap in a readable fashion
+void printHeapStats() {
+  //return;
+    
+  printf("\nFreelist: %d\n", (int) &(freelist[0])); //The freelist is now a reference to "where the data ends"
+
+  printf("heapFrom:\n");
+  printHeap(heap);
+
+  printf("heapTo:\n");
+  printHeap(heapTo);
 }
 
 void initheap() {
+  //Allocate heaps
   heap = (word*)malloc(sizeof(word)*HEAPSIZE);
+  heapTo = (word*)malloc(sizeof(word)*HEAPSIZE);
+
+  //Set after heap pointers
   afterHeap = &heap[HEAPSIZE];
-  // Initially, entire heap is one block on the freelist:
-  heap[0] = mkheader(0, HEAPSIZE-1, Blue);
-  heap[1] = (word)0;
+  afterHeapTo = &heapTo[HEAPSIZE];
+  
+  //Init the freelist
   freelist = &heap[0];
 }
 
 void copyFromTo(int s[], int sp){
   //TODO
   printf("Collecting garbage\n");
+  printHeapStats();
 }
 
 //Do garbage collection
