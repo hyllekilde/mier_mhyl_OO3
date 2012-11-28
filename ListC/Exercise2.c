@@ -404,7 +404,7 @@ void initheap() {
 void markPhase(int s[], int sp) {
   printf("marking ...\n");
   int i;
-  //Mark all references in stack grey
+  //Mark all references in stack
   for(i = 0; i<sp; i++){
     if(!IsInt(s[i]) && s[i] != 0){
       mark((word *)s[i]);
