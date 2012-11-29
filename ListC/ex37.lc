@@ -39,4 +39,6 @@ void main() {
     xs = cons(44,55);
     i = i + 1;
   }
+  
+  print car(cdr(cdr(c)));
 }
