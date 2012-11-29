@@ -452,7 +452,6 @@ word* copy(word* block) {
   
   //Copy recursively if first block is a reference 
   //This must be done first, to "use" the value before overriding it with a forward-pointer
-  //TODO: Rapport -> Kunne  vaere smart med separat forward-pointer felt -> Mindre forvirring..
   if(IsReference(block[1])) newBlock[1] = (int) copy((word*) block[1]);
   
   //Update block in fromSpace to point to the new block in toSpace
