@@ -78,7 +78,7 @@ typedef unsigned int word; //A block, to be used for storing data (both header a
 
 #define CONSTAG 0
 
-#define HEAPSIZE 20 // Heap size in words
+#define HEAPSIZE 100 // Heap size in words
 
 word* heap; //Where does the heap start?
 word* heapTo; //Where does the copy heap start?
@@ -377,7 +377,7 @@ void printHeap(word* heap) {
   for (i = 0; i < HEAPSIZE; i += 1 + Length(block[0]))
   {
     block = (word*) &heap[i];
-    printf("%2d: Cons #%d (length: %d) \n", i, (int) &block[0], Length(block[0]));
+    printf("%2d: Word #%d (length: %d) \n", i, (int) &block[0], Length(block[0]));
     for (j = 1; j <= Length(block[0]); ++j){
       if (IsReference(block[j])){
         printf("%2d. Reference: %d\n", i + j, block[j]);
@@ -419,39 +419,47 @@ void initheap() {
 
 int inToHeap(word* word){
   //Check if the word has been moved
-  //Check if it is in "afterHeapTo - HEAPSIZE" to "afterHeapTo" interval
-  /*printf("FromHeap: %d - %d \n",afterHeap-HEAPSIZE,afterHeap);
-  printf("ToHeap: %d - %d \n",afterHeapTo-HEAPSIZE,afterHeapTo);
-  printf("Word: %d\n",word);*/
+  //printf("ToHeap: %d - %d \n",(int)heapTo,(int)afterHeapTo);
+  //printf("Word: %d\n",(int)word);
+  return heapTo <= word && word < afterHeapTo;
 }
 
 //Move a reference from heap to heapTo, and return the new reference
 word* copy(word* block) {
   //Is the reference all-ready moved? Then we can just return that reference..
-  if(IsReference(block[1]) && inToHeap(block[1]))
-    return block[1];
+  if(IsReference(block[1]) && inToHeap((word*)block[1])){
+    //printf("Ref# %d is in toSpace\n",(int)block[1]);
+    return (word*) block[1];
+  }
   
-
   //Allocate a block in the to-space*/
   int length = Length(block[0]);
   word* newBlock = freelist;
   freelist += length + 1;
+
+  //Ensure that we don't exceed the heap!
   if(freelist > afterHeapTo){
-    printf("Error: ToSpace can't hold content from FromSpace!");
+    printf("Error: ToSpace can't hold content from FromSpace! Freelist is: %d which is bigger than %d\n",(int)freelist, (int)afterHeapTo);
+    printf("FromHeap: %d - %d \n",(int)heap,(int)afterHeap);
+    printf("ToHeap: %d - %d \n",(int)heapTo,(int)afterHeapTo);
     exit(1);
   }
-  
+  //printf("Moving word# %d. ",(int)&block[0]);
+  //printf("Freelist is: %d\n",(int)freelist); 
+ 
   //Copy block data, including header*/
   int i;
   for(i=0; i<=length; i++)
     newBlock[i] = block[i];
-
+  
   //Update block in fromSpace to point to the new block in toSpace
-  block[1] = (word) newBlock;
+  //block[1] = (word) newBlock;
   
   //Recursively process, if this is a reference
-  /*for(i=1; i<=length; i++)
-    newBlock[i] = (int) copy((word*) block[i]); //TODO: Why the int cast?
+  for(i=1; i<=length; i++)
+    if(IsReference(block[i])) newBlock[i] = (int) copy((word*) block[i]); //Whe the INT cast? 
+
+  block[1] = (word) newBlock;
 
   //Return the new block, for updating the stack*/
   return newBlock;
@@ -459,11 +467,11 @@ word* copy(word* block) {
 
 //Collect grabage with a two-space stop-and-copy approach
 void copyFromTo(int s[], int sp){
-  printf("##BEFORE GARBAGE COLLECTION:##\n");
-  printf("Stack:");
-  printStack(s, sp);
-  printf("\n\n");
-  printHeapStats();
+  //printf("##BEFORE GARBAGE COLLECTION:##\n");
+  //printf("Stack:");
+  //printStack(s, sp);
+  //printf("\n\n");
+  //printHeapStats();
 
   //Point freelist to begining of to-space
   freelist = &heapTo[0];
@@ -474,8 +482,11 @@ void copyFromTo(int s[], int sp){
     if(IsReference(s[i]))
       s[i] = (word) copy((word*) s[i]);
 
-  printf("##AFTER GARBAGE COLLECTION (before swap):##\n"); 
-  printHeapStats();
+  //printf("##AFTER GARBAGE COLLECTION (before swap):##\n");
+  //printf("Stack:");
+  //printStack(s,sp);
+  //printf("\n\n"); 
+  //printHeapStats();
 
   //Swap the two heaps
   word* tmp = heap;
