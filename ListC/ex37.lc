@@ -31,5 +31,5 @@ void main() {
     i = i + 1;
   }
   
-  print car(cdr(cdr(c)));
+  print car(a);
 }
