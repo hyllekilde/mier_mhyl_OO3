@@ -78,7 +78,7 @@ typedef unsigned int word; //A block, to be used for storing data (both header a
 
 #define CONSTAG 0
 
-#define HEAPSIZE 100 // Heap size in words
+#define HEAPSIZE 1000 // Heap size in words
 
 word* heap; //Where does the heap start?
 word* heapTo; //Where does the copy heap start?
@@ -369,6 +369,12 @@ int inHeap(word* p) {
   return heap <= p && p < afterHeap;
 }
 
+// Is this word in the heapTo?
+int inToHeap(word* word){
+  return heapTo <= word && word < afterHeapTo;
+}
+
+// Print this heap in a human readable way
 void printHeap(word* heap) {
   word* block;
   int i;
@@ -393,9 +399,7 @@ void printHeap(word* heap) {
 
 //Print the heap in a readable fashion
 void printHeapStats() {
-  //return;
-    
-  printf("\nFreelist: %d\n", (int) &(freelist[0])); //The freelist is now a reference to "where the data ends"
+  printf("\nFreelist: %d\n", (int) &(freelist[0]));
 
   printf("heapFrom:\n");
   printHeap(heap);
@@ -417,13 +421,6 @@ void initheap() {
   freelist = &heap[0];
 }
 
-int inToHeap(word* word){
-  //Check if the word has been moved
-  //printf("ToHeap: %d - %d \n",(int)heapTo,(int)afterHeapTo);
-  //printf("Word: %d\n",(int)word);
-  return heapTo <= word && word < afterHeapTo;
-}
-
 //Move a reference from heap to heapTo, and return the new reference
 word* copy(word* block) {
   //Is the reference all-ready moved? Then we can just return that reference..
@@ -437,13 +434,14 @@ word* copy(word* block) {
   word* newBlock = freelist;
   freelist += length + 1;
 
-  //Ensure that we don't exceed the heap!
+  //Ensure that we don't exceed the heap! Should never happen, so mainly for debuging
   if(freelist > afterHeapTo){
     printf("Error: ToSpace can't hold content from FromSpace! Freelist is: %d which is bigger than %d\n",(int)freelist, (int)afterHeapTo);
     printf("FromHeap: %d - %d \n",(int)heap,(int)afterHeap);
     printf("ToHeap: %d - %d \n",(int)heapTo,(int)afterHeapTo);
     exit(1);
   }
+  
   //printf("Moving word# %d. ",(int)&block[0]);
   //printf("Freelist is: %d\n",(int)freelist); 
  
@@ -454,18 +452,17 @@ word* copy(word* block) {
   
   //Copy recursively if first block is a reference 
   //This must be done first, to "use" the value before overriding it with a forward-pointer
-  //TODO: Rapport -> Kunne  vaere smart med separat forward-pointer felt
+  //TODO: Rapport -> Kunne  vaere smart med separat forward-pointer felt -> Mindre forvirring..
   if(IsReference(block[1])) newBlock[1] = (int) copy((word*) block[1]);
+  
   //Update block in fromSpace to point to the new block in toSpace
   block[1] = (word) newBlock;
   
-  //Recursively process, if this is a reference
+  //Recursively process words in block, if they are references
   for(i=2; i<=length; i++)
     if(IsReference(block[i])) newBlock[i] = (int) copy((word*) block[i]); 
 
-  block[1] = (word) newBlock;
-
-  //Return the new block, for updating the stack*/
+  //Return the new block
   return newBlock;
 }
 
