@@ -438,8 +438,8 @@ void sweepPhase() {
         heapPtr[0] = Paint(heapPtr[0], White);
         break;
       case White: //If the header is white
-        if(Color(heap[Length(heap[0])+1]) == White){ //Is the adjacent block's header white?
-          heapPtr[0] = mkheader(0, 5, Blue); // Make new header joining the two adjacent blocks
+        if((heapPtr+length) < afterHeap && Color(heap[Length(heapPtr[0])+1]) == White){ //Is the adjacent block's header white? and within the size of the heap?
+          heapPtr[0] = mkheader(0, (length+Length(heapPtr[length+1])+1), Blue); // Make new header joining the two adjacent blocks
         }else{
           //Paint header blue
           heapPtr[0] = Paint(heapPtr[0], Blue);
