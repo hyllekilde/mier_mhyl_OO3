@@ -32,4 +32,5 @@ void main() {
   }
   
   print car(cdr(cdr(h)));
+  print cdr(cdr(c));
 }
