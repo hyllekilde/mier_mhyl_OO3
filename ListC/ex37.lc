@@ -1,6 +1,6 @@
 //Simple, easy to debug, output
 //Decrease the heapsize, to make sure Garbage Collection is done
-//Should return "10 11 1 300"
+//Should return "10 11 1 300 10"
 
 void main() {
   dynamic a;
@@ -16,7 +16,7 @@ void main() {
   c = cons(b,a);
   d = 2;
   e = 3;
-  f = 4;
+  f = cons(a,c);
   g = 5;
   
   h = cons(100,cons(200,cons(300,nil)));
@@ -42,4 +42,5 @@ void main() {
   print cdr(cdr(c));
   print car(c);
   print car(cdr(cdr(h)));
+  print car(car(f));
 }
