@@ -78,7 +78,7 @@ typedef unsigned int word; //A block, to be used for storing data (both header a
 
 #define CONSTAG 0
 
-#define HEAPSIZE 200 // Heap size in words
+#define HEAPSIZE 20 // Heap size in words
 
 word* heap; //Where does the heap start?
 word* heapTo; //Where does the copy heap start?
@@ -417,13 +417,44 @@ void initheap() {
   freelist = &heap[0];
 }
 
+int inToHeap(word* word){
+  //Check if the word has been moved
+  //Check if it is in "afterHeapTo - HEAPSIZE" to "afterHeapTo" interval
+  /*printf("FromHeap: %d - %d \n",afterHeap-HEAPSIZE,afterHeap);
+  printf("ToHeap: %d - %d \n",afterHeapTo-HEAPSIZE,afterHeapTo);
+  printf("Word: %d\n",word);*/
+}
+
 //Move a reference from heap to heapTo, and return the new reference
 word* copy(word* block) {
-  //Allocate a block in the to-space
-  //TODO: word* newBlock = allocate((int)BlockTag(block[0]),(int) Length(block[0],)
+  //Is the reference all-ready moved? Then we can just return that reference..
+  if(IsReference(block[1]) && inToHeap(block[1]))
+    return block[1];
+  
 
-  //TODO: Copy-step -> See PLC...
+  //Allocate a block in the to-space*/
+  int length = Length(block[0]);
+  word* newBlock = freelist;
+  freelist += length + 1;
+  if(freelist > afterHeapTo){
+    printf("Error: ToSpace can't hold content from FromSpace!");
+    exit(1);
+  }
+  
+  //Copy block data, including header*/
+  int i;
+  for(i=0; i<=length; i++)
+    newBlock[i] = block[i];
 
+  //Update block in fromSpace to point to the new block in toSpace
+  block[1] = (word) newBlock;
+  
+  //Recursively process, if this is a reference
+  /*for(i=1; i<=length; i++)
+    newBlock[i] = (int) copy((word*) block[i]); //TODO: Why the int cast?
+
+  //Return the new block, for updating the stack*/
+  return newBlock;
 }
 
 //Collect grabage with a two-space stop-and-copy approach
@@ -432,7 +463,7 @@ void copyFromTo(int s[], int sp){
   printf("Stack:");
   printStack(s, sp);
   printf("\n\n");
-  printHeapStats();  
+  printHeapStats();
 
   //Point freelist to begining of to-space
   freelist = &heapTo[0];
@@ -441,7 +472,7 @@ void copyFromTo(int s[], int sp){
   int i;
   for(i=0; i<=sp; i++)
     if(IsReference(s[i]))
-      s[i] = (word) moveAndUpdate((word*) s[i]);
+      s[i] = (word) copy((word*) s[i]);
 
   printf("##AFTER GARBAGE COLLECTION (before swap):##\n"); 
   printHeapStats();
