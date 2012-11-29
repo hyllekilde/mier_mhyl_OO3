@@ -1,3 +1,5 @@
+//Simple, easy to debug, output
+//Decrease the heapsize, to make sure Garbage Collection is done
 //Should return "10 11 1"
 
 void main() {
