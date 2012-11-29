@@ -19,7 +19,7 @@ void main() {
   f = 4;
   g = 5;
   
-  h = cons(100,cons(200,cons(1,300)));
+  h = cons(100,cons(200,cons(300,nil)));
   
   int i;
   i = 0;
