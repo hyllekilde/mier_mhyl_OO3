@@ -21,6 +21,14 @@ void main() {
   
   h = cons(100,cons(200,cons(300,nil)));
   
+  dynamic cyclea;
+  dynamic cycleb;
+  dynamic cyclec;
+  cyclea = cons(1,cycleb);
+  cycleb = cons(2,cyclec);
+  cyclec = cons(3,cyclea);
+  
+  
   int i;
   i = 0;
   while(i<5){
