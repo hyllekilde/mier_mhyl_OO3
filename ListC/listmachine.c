@@ -452,12 +452,16 @@ word* copy(word* block) {
   for(i=0; i<=length; i++)
     newBlock[i] = block[i];
   
+  //Copy recursively if first block is a reference 
+  //This must be done first, to "use" the value before overriding it with a forward-pointer
+  //TODO: Rapport -> Kunne  vaere smart med separat forward-pointer felt
+  if(IsReference(block[1])) newBlock[1] = (int) copy((word*) block[1]);
   //Update block in fromSpace to point to the new block in toSpace
-  //block[1] = (word) newBlock;
+  block[1] = (word) newBlock;
   
   //Recursively process, if this is a reference
-  for(i=1; i<=length; i++)
-    if(IsReference(block[i])) newBlock[i] = (int) copy((word*) block[i]); //Whe the INT cast? 
+  for(i=2; i<=length; i++)
+    if(IsReference(block[i])) newBlock[i] = (int) copy((word*) block[i]); 
 
   block[1] = (word) newBlock;
 
