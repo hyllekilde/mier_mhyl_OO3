@@ -1,3 +1,5 @@
+//Should return "10 11 1"
+
 void main() {
   dynamic a;
   int b;
@@ -33,4 +35,5 @@ void main() {
   
   print car(cdr(cdr(h)));
   print cdr(cdr(c));
+  print car(c);
 }
