@@ -450,16 +450,12 @@ word* copy(word* block) {
   for(i=0; i<=length; i++)
     newBlock[i] = block[i];
   
-  //Copy recursively if first block is a reference 
-  //This must be done first, to "use" the value before overriding it with a forward-pointer
-  if(IsReference(block[1])) newBlock[1] = (int) copy((word*) block[1]);
-  
   //Update block in fromSpace to point to the new block in toSpace
   block[1] = (word) newBlock;
   
   //Recursively process words in block, if they are references
   for(i=2; i<=length; i++)
-    if(IsReference(block[i])) newBlock[i] = (int) copy((word*) block[i]); 
+    if(IsReference(newBlock[i])) newBlock[i] = (int) copy((word*) newBlock[i]); 
 
   //Return the new block
   return newBlock;
